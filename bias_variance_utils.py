@@ -100,7 +100,12 @@ def run_experiment(
         mean_pred = preds.mean(axis=0)
         bias2 = float(np.mean((mean_pred - y_test_true) ** 2))
         variance = float(np.mean(np.var(preds, axis=0)))
-        test_mse = float(np.mean((preds - y_test_true[np.newaxis, :]) ** 2))
+        test_mse_seeds = []
+        for s in range(n_seeds):
+            rng_test = np.random.default_rng(seed + s * 1000 + 1)
+            y_test_noisy = y_test_true + rng_test.normal(0, noise, n_test)
+            test_mse_seeds.append(float(np.mean((preds[s] - y_test_noisy) ** 2)))
+        test_mse = float(np.mean(test_mse_seeds))
 
         all_preds[d] = preds
         bias2_list.append(bias2)
@@ -153,11 +158,6 @@ def plot_data_generating_process(
         ] + rng.normal(0, noise, n_train)
         label = f"Training set {i + 1}" if i < 3 else ""
         ax.scatter(x_tr, y_tr, s=22, color=c, alpha=0.75, zorder=4, label=label)
-    ax.set_xlabel("x"); ax.set_ylabel("y")
-    
-    ax.set_title(
-        f"Example Training Sample"
-    )
     
     ax.legend(fontsize=8); ax.set_xlim(x_min, x_max)
     plt.tight_layout()
@@ -221,7 +221,7 @@ def plot_model_showcase(
 def plot_train_vs_test_error(
     results: dict,
     show_noise_floor: bool = False,
-    figsize: tuple = (9, 5),
+    figsize: tuple = (9, 5)
 ) -> plt.Figure:
     """
     Plot training error vs test error as a function of polynomial degree, producing the classic U-shaped test-error curve.
@@ -248,6 +248,34 @@ def plot_train_vs_test_error(
     plt.tight_layout()
     return fig
 
+def plot_train_error(
+    results: dict,
+    show_noise_floor: bool = False,
+    figsize: tuple = (9, 5),
+    custom_ticks: list = []
+) -> plt.Figure:
+    """
+    Plot training error vs test error as a function of polynomial degree, producing the classic U-shaped test-error curve.
+    """
+    degrees  = results["degrees"]
+    train_mse = results["train_mse"]
+    noise     = results["noise"]
+
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(degrees, train_mse, marker='o', color="seagreen", lw=2, ms=6, label="Training Error")
+    if show_noise_floor:
+        ax.axhline(noise ** 2, color="gray", ls=":", lw=1.5, label=f"Irreducible noise  σ² = {noise**2:.3f}")
+    ax.set_xlabel("Model Complexity")
+    ax.set_ylabel("Error")
+    ax.legend(fontsize=9)
+    
+    if custom_ticks == []:  
+        ax.set_xticks(degrees)
+    if len(custom_ticks)>0:
+        ax.set_xticks(custom_ticks)
+    plt.tight_layout()
+    return fig
+
 
 def plot_bias_variance_decomposition(
     results: dict,
@@ -262,7 +290,7 @@ def plot_bias_variance_decomposition(
     var      = results["variance"]
     test_mse = results["test_mse"]
     noise    = results["noise"]
-    bias_and_var = results["bias2"] + results["variance"]
+    bias_and_var = results["bias2"] + results["variance"] + results["noise"]**2
     
     ncols = 2 if show_stacked else 1
     fig, axes = plt.subplots(1, ncols, figsize=figsize)
@@ -277,7 +305,6 @@ def plot_bias_variance_decomposition(
     ax.plot(degrees, test_mse, "D:",  color="tomato", lw=2, ms=6, label="Test MSE")
     #ax.axhline(noise ** 2, color="gray", ls=":", lw=1.5, label=f"σ² = {noise**2:.3f}")
     ax.set_xlabel("Model Complexity"); ax.set_ylabel("Error")
-    ax.set_title("Bias–Variance Decomposition")
     ax.legend(fontsize=8); ax.set_xticks(degrees)
 
     # Stacked area
