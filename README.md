@@ -8,7 +8,7 @@ $$
 \mathbb{E}_{\mathcal{D},\varepsilon}\left[(\hat{f}(x) - Y)^2\right] = \left(\mathbb{E}_{\mathcal{D}}[\hat{f}(x)] - f^*(x)\right)^2 + \mathbb{E}_{\mathcal{D}}\left[(\hat{f}(x) - \mathbb{E}_{\mathcal{D}}[\hat{f}(x)])^2\right] + \sigma^2,
 $$
 
-indicating the estimator's bias squared, variance, and noise terms respectively in the RHS (Section 2 & 3).
+indicating the estimator's bias squared, variance, and noise terms respectively in the RHS (Sections 2 & 3).
 
 ![Alt text](figures/decomp.png)
 
